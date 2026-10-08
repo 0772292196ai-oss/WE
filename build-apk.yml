@@ -1,0 +1,83 @@
+name: Build signed APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Upload id"
+        required: true
+      app_name:
+        required: true
+        default: "My App"
+      app_id:
+        required: true
+        default: "com.example.myapp"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      RUN_ID: ${{ inputs.run_id }}
+      APP_NAME: ${{ inputs.app_name }}
+      APP_ID: ${{ inputs.app_id }}
+      KS_B64: ${{ secrets.KEYSTORE_BASE64 }}
+      KS_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Prepare web files
+        run: |
+          mkdir -p build/www
+          cp "uploads/${RUN_ID}.html" build/www/index.html
+
+      - name: Create Capacitor Android project
+        working-directory: build
+        run: |
+          npm init -y
+          npm i @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "$APP_NAME" "$APP_ID" --web-dir www
+          npx cap add android
+          npx cap sync android
+
+      - name: Accept Android licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+
+      - name: Build release APK
+        working-directory: build/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Align and sign
+        run: |
+          PASS="${KS_PASS:-android123}"
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > ks.jks
+            ALIAS=$(keytool -list -keystore ks.jks -storepass "$PASS" 2>/dev/null | grep -m1 PrivateKeyEntry | cut -d, -f1)
+          else
+            ALIAS=key
+            keytool -genkeypair -keystore ks.jks -alias key -keyalg RSA -keysize 2048 \
+              -validity 10000 -storepass "$PASS" -keypass "$PASS" -dname "CN=$APP_NAME"
+          fi
+          BT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+          UNSIGNED=$(find build/android/app/build/outputs/apk/release -name "*.apk" | head -1)
+          "$BT/zipalign" -f -p 4 "$UNSIGNED" aligned.apk
+          "$BT/apksigner" sign --ks ks.jks --ks-pass "pass:$PASS" --key-pass "pass:$PASS" \
+            --ks-key-alias "$ALIAS" --out "app-${RUN_ID}.apk" aligned.apk
+          "$BT/apksigner" verify "app-${RUN_ID}.apk"
+
+      - name: Publish release
+        run: |
+          gh release create "apk-${RUN_ID}" "app-${RUN_ID}.apk" \
+            --title "APK ${RUN_ID}" --notes "Built from uploads/${RUN_ID}.html"

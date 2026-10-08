@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HTML ל-APK</title>
+<style>
+  :root{--bg:#f4f6fb;--card:#fff;--tx:#1b2333;--mut:#6b7488;--pri:#2f6bff;--bd:#dde2ee;--ok:#16a34a;--err:#dc2626}
+  @media(prefers-color-scheme:dark){:root{--bg:#0f1420;--card:#171e2e;--tx:#e8ecf6;--mut:#8f9ab3;--bd:#2a3350}}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:var(--tx);display:flex;justify-content:center;padding:24px}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:24px;width:100%;max-width:520px}
+  h1{margin:0 0 4px;font-size:22px}
+  p.sub{margin:0 0 20px;color:var(--mut);font-size:14px}
+  label{display:block;font-size:13px;margin:14px 0 6px;color:var(--mut)}
+  input{width:100%;padding:10px 12px;border:1px solid var(--bd);border-radius:10px;background:transparent;color:var(--tx);font-size:15px}
+  input[type=file]{padding:8px}
+  button{margin-top:20px;width:100%;padding:12px;border:0;border-radius:10px;background:var(--pri);color:#fff;font-size:16px;cursor:pointer}
+  button:disabled{opacity:.5;cursor:wait}
+  #log{margin-top:16px;font-size:14px;line-height:1.7;white-space:pre-wrap}
+  .ok{color:var(--ok)}.err{color:var(--err)}
+  a.dl{display:block;margin-top:12px;text-align:center;padding:12px;border-radius:10px;background:var(--ok);color:#fff;text-decoration:none;font-size:16px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>המרת HTML ל-APK חתום</h1>
+  <p class="sub">מעלים קובץ HTML, והמערכת בונה וחותמת APK דרך GitHub Actions.</p>
+
+  <label>GitHub Token (הרשאות: Contents + Actions קריאה וכתיבה)</label>
+  <input id="token" type="password" placeholder="github_pat_...">
+
+  <div class="row">
+    <div><label>בעל הריפו</label><input id="owner" placeholder="username"></div>
+    <div><label>שם הריפו</label><input id="repo" placeholder="my-repo"></div>
+  </div>
+
+  <div class="row">
+    <div><label>שם האפליקציה</label><input id="appName" value="My App"></div>
+    <div><label>Package ID</label><input id="appId" value="com.example.myapp" dir="ltr"></div>
+  </div>
+
+  <label>קובץ HTML</label>
+  <input id="file" type="file" accept=".html,.htm">
+
+  <button id="go">בנה APK</button>
+  <div id="log"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const log = (t, c) => { $('log').innerHTML = `<span class="${c||''}">${t}</span>`; };
+
+// שמירת הגדרות (לא כולל קובץ) אצל המשתמש בלבד
+try {
+  for (const k of ['token','owner','repo','appName','appId']) {
+    const v = localStorage.getItem('h2a_'+k); if (v) $(k).value = v;
+  }
+} catch(e){}
+
+const api = async (token, path, opts={}) => {
+  const r = await fetch('https://api.github.com' + path, {
+    ...opts,
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      ...(opts.headers||{})
+    }
+  });
+  return r;
+};
+
+const toB64 = buf => {
+  let s = ''; const b = new Uint8Array(buf);
+  for (let i=0;i<b.length;i+=0x8000) s += String.fromCharCode.apply(null, b.subarray(i,i+0x8000));
+  return btoa(s);
+};
+
+$('go').onclick = async () => {
+  const token = $('token').value.trim(), owner = $('owner').value.trim(), repo = $('repo').value.trim();
+  const appName = $('appName').value.trim(), appId = $('appId').value.trim();
+  const file = $('file').files[0];
+  if (!token || !owner || !repo || !file) return log('חסרים פרטים או קובץ.', 'err');
+  if (!/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/.test(appId)) return log('Package ID לא תקין (למשל com.example.app).', 'err');
+
+  try { for (const k of ['token','owner','repo','appName','appId']) localStorage.setItem('h2a_'+k, $(k).value); } catch(e){}
+
+  $('go').disabled = true;
+  const runId = Date.now().toString();
+  try {
+    log('בודק ריפו...');
+    const rr = await api(token, `/repos/${owner}/${repo}`);
+    if (!rr.ok) throw new Error('הריפו לא נמצא או שאין הרשאה (' + rr.status + ')');
+    const branch = (await rr.json()).default_branch;
+
+    log('מעלה את קובץ ה-HTML...');
+    const content = toB64(await file.arrayBuffer());
+    const up = await api(token, `/repos/${owner}/${repo}/contents/uploads/${runId}.html`, {
+      method: 'PUT',
+      body: JSON.stringify({ message: 'upload ' + runId, content, branch })
+    });
+    if (!up.ok) throw new Error('העלאה נכשלה: ' + (await up.text()));
+
+    log('מפעיל בנייה...');
+    const dp = await api(token, `/repos/${owner}/${repo}/actions/workflows/build-apk.yml/dispatches`, {
+      method: 'POST',
+      body: JSON.stringify({ ref: branch, inputs: { run_id: runId, app_name: appName, app_id: appId } })
+    });
+    if (dp.status !== 204) throw new Error('הפעלת ה-workflow נכשלה: ' + (await dp.text()));
+
+    const start = Date.now();
+    while (Date.now() - start < 15*60*1000) {
+      await new Promise(r => setTimeout(r, 10000));
+      const sec = Math.round((Date.now()-start)/1000);
+      log(`בונה וחותם APK... (${sec} שניות)`);
+      const rel = await api(token, `/repos/${owner}/${repo}/releases/tags/apk-${runId}`);
+      if (rel.ok) {
+        const j = await rel.json();
+        const asset = (j.assets||[])[0];
+        if (asset) {
+          $('log').innerHTML = `<span class="ok">ה-APK מוכן.</span><a class="dl" href="${asset.browser_download_url}">הורד APK</a>`;
+          return;
+        }
+      }
+    }
+    throw new Error('הבנייה לוקחת יותר מדי זמן. בדוק את לשונית Actions בריפו.');
+  } catch (e) {
+    log(e.message, 'err');
+  } finally {
+    $('go').disabled = false;
+  }
+};
+</script>
+</body>
+</html>
