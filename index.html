@@ -5,155 +5,277 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HTML ל-APK</title>
 <style>
-  :root{--bg:#f4f6fb;--card:#fff;--tx:#1b2333;--mut:#6b7488;--pri:#2f6bff;--bd:#dde2ee;--ok:#16a34a;--err:#dc2626}
-  @media(prefers-color-scheme:dark){:root{--bg:#0f1420;--card:#171e2e;--tx:#e8ecf6;--mut:#8f9ab3;--bd:#2a3350}}
-  *{box-sizing:border-box}
-  body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:var(--tx);display:flex;justify-content:center;padding:24px}
-  .card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:24px;width:100%;max-width:520px}
-  h1{margin:0 0 4px;font-size:22px}
-  p.sub{margin:0 0 20px;color:var(--mut);font-size:14px}
-  label{display:block;font-size:13px;margin:14px 0 6px;color:var(--mut)}
-  input{width:100%;padding:10px 12px;border:1px solid var(--bd);border-radius:10px;background:transparent;color:var(--tx);font-size:15px}
-  input[type=file]{padding:8px}
-  button{margin-top:20px;width:100%;padding:12px;border:0;border-radius:10px;background:var(--pri);color:#fff;font-size:16px;cursor:pointer}
-  button:disabled{opacity:.5;cursor:wait}
-  #log{margin-top:16px;font-size:14px;line-height:1.7;white-space:pre-wrap}
-  .ok{color:var(--ok)}.err{color:var(--err)}
-  a.dl{display:block;margin-top:12px;text-align:center;padding:12px;border-radius:10px;background:var(--ok);color:#fff;text-decoration:none;font-size:16px}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+:root{--bg:#070b14;--panel:#0d1424;--field:#05080f;--bd:#1c2740;--tx:#e8ecf6;--mut:#7d8aa6;--pri:#1fa2ff;--pri2:#6a4bff;--acc:#10b981;--err:#f87171}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,"Segoe UI",Arial,sans-serif;padding:24px}
+.layout{max-width:1200px;margin:auto;display:grid;grid-template-columns:380px minmax(0,1fr);gap:20px;align-items:start}
+@media(max-width:900px){.layout{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--bd);border-radius:16px;padding:20px}
+h2{margin:0 0 16px;font-size:16px;display:flex;align-items:center;justify-content:space-between}
+h2 small{color:var(--mut);font-weight:400;font-size:11px}
+.drop{border:2px dashed #0f7a5a;background:rgba(16,185,129,.05);border-radius:14px;padding:28px 12px;text-align:center;cursor:pointer;transition:.2s}
+.drop.over{background:rgba(16,185,129,.15)}
+.drop .ico{width:50px;height:50px;margin:0 auto 12px;border-radius:12px;background:rgba(16,185,129,.18);display:grid;place-items:center;color:var(--acc);font-size:22px}
+.drop b{display:block;font-size:15px;margin-bottom:4px;word-break:break-all}
+.drop span{color:var(--mut);font-size:12px}
+.links{margin-top:14px;font-size:13px}.links a{color:var(--pri);cursor:pointer;margin:0 6px}.links a.del{color:var(--err)}
+.info{margin-top:16px;border:1px solid var(--bd);border-radius:12px;padding:14px;font-size:12px;color:var(--mut);line-height:1.9}
+.info h4{margin:0 0 8px;color:var(--tx);font-size:13px}
+.info ul{margin:0;padding-inline-start:18px}.info li::marker{color:var(--pri)}
+.info b{color:var(--tx)}.info code{color:var(--pri);background:var(--field);padding:1px 5px;border-radius:4px;direction:ltr;unicode-bidi:embed}
+details{margin-top:16px;border:1px solid var(--bd);border-radius:12px;padding:10px 14px}
+summary{cursor:pointer;font-size:13px;color:var(--mut)}
+.go{margin-top:16px;width:100%;padding:15px;border:0;border-radius:12px;color:#fff;font-size:16px;font-weight:600;cursor:pointer;background:linear-gradient(90deg,var(--pri),var(--pri2));box-shadow:0 8px 24px rgba(79,70,229,.3)}
+.go:disabled{opacity:.55;cursor:wait}
+#status{margin-top:14px;font-size:13px;line-height:1.8}
+.bar{height:6px;background:var(--field);border-radius:6px;overflow:hidden;margin-top:8px}.bar i{display:block;height:100%;width:30%;background:linear-gradient(90deg,var(--pri),var(--pri2));animation:mv 1.4s infinite}
+@keyframes mv{0%{margin-inline-start:-30%}100%{margin-inline-start:100%}}
+.dl{display:block;margin-top:10px;text-align:center;padding:13px;border-radius:12px;background:var(--acc);color:#fff;text-decoration:none;font-weight:600}
+.err{color:var(--err)}.ok{color:var(--acc)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--bd);margin:-4px 0 20px;overflow-x:auto}
+.tab{padding:11px 16px;font-size:13px;color:var(--mut);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tab.on{color:var(--pri);border-color:var(--pri);background:rgba(31,162,255,.08);border-radius:8px 8px 0 0}
+.pane{display:none}.pane.on{display:block}
+.grid{display:grid;gap:16px}.g2{grid-template-columns:1fr 1fr}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:700px){.g2,.g4{grid-template-columns:1fr 1fr}}
+label.l{display:block;font-size:12px;margin-bottom:6px;color:var(--tx)}
+.hint{font-size:11px;color:var(--mut);margin-top:6px}
+input[type=text],input[type=password],input[type=number],select,textarea{width:100%;padding:12px 14px;background:var(--field);border:1px solid var(--bd);border-radius:10px;color:var(--tx);font-size:14px;font-family:inherit}
+input:focus,select:focus{outline:1px solid var(--pri)}
+.ltr{direction:ltr;text-align:left}
+.box{border:1px solid var(--bd);border-radius:12px;padding:14px;display:flex;gap:12px;align-items:flex-start;font-size:13px}
+.box small{display:block;color:var(--mut);font-size:11px;margin-top:2px}
+.box input{margin-top:3px;accent-color:var(--pri);width:16px;height:16px}
+.chk{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:700px){.chk{grid-template-columns:1fr}}
+.iconbox{border:1px solid var(--bd);border-radius:12px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.iconbox img{width:56px;height:56px;border-radius:12px;object-fit:cover;background:var(--field)}
+.btn2{background:var(--field);border:1px solid var(--bd);color:var(--tx);padding:9px 14px;border-radius:10px;cursor:pointer;font-size:13px}
+.sec{margin-top:20px}.sec>.t{font-size:12px;margin-bottom:8px}
 </style>
 </head>
 <body>
-<div class="card">
-  <h1>המרת HTML ל-APK חתום</h1>
-  <p class="sub">מעלים קובץ HTML, והמערכת בונה וחותמת APK דרך GitHub Actions.</p>
+<div class="layout">
 
-  <label>GitHub Token (הרשאות: Contents + Actions קריאה וכתיבה)</label>
-  <input id="token" type="password" placeholder="github_pat_...">
+<!-- פאנל העלאה -->
+<div class="panel">
+  <h2><span>1. העלאת קבצי Web (.html או .zip)</span><small>Max 100MB</small></h2>
+  <div class="drop" id="drop">
+    <div class="ico">&lt;/&gt;</div>
+    <b id="dName">גרור קובץ לכאן או לחץ לבחירה</b>
+    <span id="dSize">HTML או ZIP עם index.html</span>
+    <div class="links" id="dLinks" hidden><a id="dChange">החלף קובץ</a>•<a class="del" id="dDel">הסר</a></div>
+  </div>
+  <input id="file" type="file" accept=".html,.htm,.zip" hidden>
 
-  <div class="row">
-    <div><label>בעל הריפו</label><input id="owner" placeholder="username"></div>
-    <div><label>שם הריפו</label><input id="repo" placeholder="my-repo"></div>
+  <div class="info">
+    <h4>מה ייכנס לקובץ ה-APK:</h4>
+    <ul>
+      <li><b>מעטפת WebView מקומית:</b> האפליקציה רצה ללא שרת, עם JavaScript</li>
+      <li><b>הקבצים שלך:</b> נארזים בתוך האפליקציה ורצים מקומית</li>
+      <li><b>APK חתום:</b> מיושר וחתום בסכמות v2/v3</li>
+    </ul>
   </div>
 
-  <div class="row">
-    <div><label>שם האפליקציה</label><input id="appName" value="My App"></div>
-    <div><label>Package ID</label><input id="appId" value="com.example.myapp" dir="ltr"></div>
+  <details id="conn">
+    <summary>חיבור ל-GitHub</summary>
+    <div class="grid" style="margin-top:12px">
+      <div><label class="l">GitHub Token (Contents + Actions: קריאה וכתיבה)</label><input class="ltr" type="password" id="token" placeholder="github_pat_..."></div>
+      <div class="grid g2">
+        <div><label class="l">בעל הריפו</label><input class="ltr" type="text" id="owner" placeholder="username"></div>
+        <div><label class="l">שם הריפו</label><input class="ltr" type="text" id="repo" placeholder="my-repo"></div>
+      </div>
+    </div>
+  </details>
+
+  <button class="go" id="go">▶ הפק APK עצמאי</button>
+  <div id="status"></div>
+</div>
+
+<!-- פאנל הגדרות -->
+<div class="panel">
+  <div class="tabs" id="tabs">
+    <div class="tab on" data-t="general">הגדרות כלליות</div>
+    <div class="tab" data-t="perms">הרשאות אנדרואיד</div>
+    <div class="tab" data-t="web">הגדרות WebView</div>
+    <div class="tab" data-t="sign">חתימה ותעודות</div>
   </div>
 
-  <label>קובץ HTML</label>
-  <input id="file" type="file" accept=".html,.htm">
+  <div class="pane on" id="p-general">
+    <div class="grid g2">
+      <div><label class="l">שם האפליקציה</label><input type="text" id="appName" value="My App"></div>
+      <div><label class="l">שם חבילה (Package Name)</label><input class="ltr" type="text" id="appId" value="com.example.myapp">
+        <div class="hint">מזהה ייחודי עבור אנדרואיד (למשל: com.mycompany.myapp)</div></div>
+    </div>
+    <div class="grid g4 sec">
+      <div><label class="l">גרסת תצוגה (Version Name)</label><input class="ltr" type="text" id="vName" value="1.0.0"></div>
+      <div><label class="l">מספר גרסה (Version Code)</label><input class="ltr" type="number" min="1" id="vCode" value="1"></div>
+      <div><label class="l">אנדרואיד מינימלי (Min SDK)</label>
+        <select id="minSdk"><option value="23">23 (Android 6+)</option><option value="26">26 (Android 8+)</option><option value="29">29 (Android 10+)</option><option value="33">33 (Android 13+)</option></select></div>
+      <div><label class="l">אנדרואיד יעד (Target SDK)</label>
+        <select id="targetSdk"><option value="34">34 (Android 14)</option><option value="35">35 (Android 15)</option></select></div>
+    </div>
+    <div class="grid g2 sec">
+      <div><label class="l">כיוון מסך</label>
+        <select id="orient"><option value="default">ברירת מחדל (אוטומטי לפי סיבוב המכשיר)</option><option value="portrait">לאורך (Portrait)</option><option value="landscape">לרוחב (Landscape)</option></select></div>
+      <label class="box"><input type="checkbox" id="fullscreen" checked><span><b>מצב מסך מלא (ללא שורת סטטוס/כותרת עליונה)</b><small>מסתיר את שורת הסטטוס ומעניק חוויית משתמש של אפליקציה במסך מלא</small></span></label>
+    </div>
+    <div class="sec"><div class="t">אייקון מותאם אישית (PNG/JPG)</div>
+      <div class="iconbox">
+        <button class="btn2" id="iconBtn">⬆ העלה תמונת אייקון</button>
+        <div style="display:flex;gap:12px;align-items:center;text-align:start">
+          <div><div id="iconMsg" style="font-size:13px">לא נבחר אייקון (יוצג אייקון ברירת מחדל)</div><div class="hint">מומלץ: תמונת PNG מרובעת ברזולוציה של 512x512 פיקסלים</div></div>
+          <img id="iconPrev" alt="" hidden>
+        </div>
+      </div>
+      <input type="file" id="icon" accept="image/*" hidden>
+    </div>
+  </div>
 
-  <label>תמונת אייקון (אופציונלי, PNG/JPG, עדיף ריבועית)</label>
-  <input id="icon" type="file" accept="image/*">
+  <div class="pane" id="p-perms">
+    <div class="hint" style="margin:0 0 14px">בחר את ההרשאות שהאפליקציה תבקש. ההרשאות הרגישות יוצגו למשתמש בבקשה בזמן ריצה.</div>
+    <div class="chk" id="permList"></div>
+  </div>
 
-  <button id="go">בנה APK</button>
-  <div id="log"></div>
+  <div class="pane" id="p-web">
+    <div class="chk">
+      <label class="box"><input type="checkbox" id="mixed"><span><b>אפשר תוכן מעורב (HTTP בתוך HTTPS)</b><small>מאפשר טעינת משאבים לא מוצפנים</small></span></label>
+      <label class="box"><input type="checkbox" id="debug"><span><b>ניפוי שגיאות ב-WebView</b><small>מאפשר חיבור מ-chrome://inspect</small></span></label>
+    </div>
+    <div class="grid g2 sec">
+      <div><label class="l">צבע רקע בזמן טעינה</label><input class="ltr" type="text" id="bgColor" placeholder="#000000"></div>
+      <div><label class="l">User-Agent מותאם (אופציונלי)</label><input class="ltr" type="text" id="ua" placeholder="ברירת מחדל"></div>
+    </div>
+  </div>
+
+  <div class="pane" id="p-sign">
+    <div class="info" style="margin-top:0">
+      <h4>איך ה-APK נחתם</h4>
+      <ul>
+        <li><b>ברירת מחדל:</b> נוצר מפתח חדש בכל בנייה. מתאים להתקנה ישירה, אך אי אפשר לעדכן אפליקציה קיימת.</li>
+        <li><b>חתימה קבועה:</b> בריפו, ב-Settings ← Secrets ← Actions, הוסף <code>KEYSTORE_BASE64</code> (קובץ ה-keystore ב-base64) ו-<code>KEYSTORE_PASSWORD</code>. מרגע זה כל בנייה תיחתם באותו מפתח.</li>
+        <li>שמור גיבוי של ה-keystore. בלעדיו אי אפשר לפרסם עדכונים.</li>
+      </ul>
+    </div>
+  </div>
+</div>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
-const log = (t, c) => { $('log').innerHTML = `<span class="${c||''}">${t}</span>`; };
+const PERMS = [
+  ['INTERNET','גישה לאינטרנט','נדרש לטעינת משאבים מהרשת',true],
+  ['CAMERA','מצלמה','',false],
+  ['RECORD_AUDIO','מיקרופון','',false],
+  ['ACCESS_FINE_LOCATION','מיקום מדויק','',false],
+  ['VIBRATE','רטט','',false],
+  ['POST_NOTIFICATIONS','התראות','Android 13+',false],
+  ['READ_MEDIA_IMAGES','קריאת תמונות','Android 13+',false],
+  ['WAKE_LOCK','מניעת כיבוי מסך','',false]
+];
+$('permList').innerHTML = PERMS.map(p=>`<label class="box"><input type="checkbox" data-p="${p[0]}" ${p[3]?'checked':''}><span><b>${p[1]}</b>${p[2]?`<small>${p[2]}</small>`:''}</span></label>`).join('');
 
-// שמירת הגדרות (לא כולל קובץ) אצל המשתמש בלבד
-try {
-  for (const k of ['token','owner','repo','appName','appId']) {
-    const v = localStorage.getItem('h2a_'+k); if (v) $(k).value = v;
-  }
-} catch(e){}
+// לשוניות
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab,.pane').forEach(e=>e.classList.remove('on'));
+  t.classList.add('on'); $('p-'+t.dataset.t).classList.add('on');
+});
 
-const api = async (token, path, opts={}) => {
-  const r = await fetch('https://api.github.com' + path, {
-    ...opts,
-    headers: {
-      'Authorization': 'Bearer ' + token,
-      'Accept': 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-      ...(opts.headers||{})
-    }
-  });
-  return r;
+// שמירת חיבור
+try{for(const k of ['token','owner','repo']){const v=localStorage.getItem('h2a_'+k);if(v)$(k).value=v}
+if(!$('token').value)$('conn').open=true}catch(e){}
+
+// העלאת קובץ
+let webFile=null;
+const setFile=f=>{
+  webFile=f;
+  $('dName').textContent=f?f.name:'גרור קובץ לכאן או לחץ לבחירה';
+  $('dSize').textContent=f?(f.size/1024).toFixed(1)+' KB':'HTML או ZIP עם index.html';
+  $('dLinks').hidden=!f;
 };
+$('drop').onclick=e=>{if(e.target.closest('.links'))return;$('file').click()};
+$('dChange').onclick=()=>$('file').click();
+$('dDel').onclick=()=>{$('file').value='';setFile(null)};
+$('file').onchange=e=>setFile(e.target.files[0]||null);
+['dragover','dragenter'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.add('over')}));
+['dragleave','drop'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.remove('over')}));
+$('drop').addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)setFile(f)});
 
-const toB64 = buf => {
-  let s = ''; const b = new Uint8Array(buf);
-  for (let i=0;i<b.length;i+=0x8000) s += String.fromCharCode.apply(null, b.subarray(i,i+0x8000));
-  return btoa(s);
+// אייקון
+let iconFile=null;
+$('iconBtn').onclick=()=>$('icon').click();
+$('icon').onchange=e=>{
+  iconFile=e.target.files[0]||null;
+  $('iconMsg').textContent=iconFile?'אייקון הותאם בהצלחה':'לא נבחר אייקון (יוצג אייקון ברירת מחדל)';
+  $('iconPrev').hidden=!iconFile;
+  if(iconFile)$('iconPrev').src=URL.createObjectURL(iconFile);
 };
-
-// ממיר כל תמונה ל-PNG ריבועי 512x512 (חיתוך למרכז) ומחזיר base64
-const iconToPngB64 = async file => {
-  const bmp = await createImageBitmap(file);
-  const s = Math.min(bmp.width, bmp.height);
-  const c = document.createElement('canvas'); c.width = c.height = 512;
-  c.getContext('2d').drawImage(bmp, (bmp.width-s)/2, (bmp.height-s)/2, s, s, 0, 0, 512, 512);
+const iconToPngB64=async f=>{
+  const b=await createImageBitmap(f),s=Math.min(b.width,b.height);
+  const c=document.createElement('canvas');c.width=c.height=512;
+  c.getContext('2d').drawImage(b,(b.width-s)/2,(b.height-s)/2,s,s,0,0,512,512);
   return c.toDataURL('image/png').split(',')[1];
 };
 
-$('go').onclick = async () => {
-  const token = $('token').value.trim(), owner = $('owner').value.trim(), repo = $('repo').value.trim();
-  const appName = $('appName').value.trim(), appId = $('appId').value.trim();
-  const file = $('file').files[0];
-  if (!token || !owner || !repo || !file) return log('חסרים פרטים או קובץ.', 'err');
-  if (!/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/.test(appId)) return log('Package ID לא תקין (למשל com.example.app).', 'err');
+// GitHub
+const api=(t,p,o={})=>fetch('https://api.github.com'+p,{...o,headers:{'Authorization':'Bearer '+t,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(o.headers||{})}});
+const toB64=buf=>{let s='';const b=new Uint8Array(buf);for(let i=0;i<b.length;i+=0x8000)s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));return btoa(s)};
+const utf8B64=str=>toB64(new TextEncoder().encode(str));
+const say=(h,busy)=>{$('status').innerHTML=h+(busy?'<div class="bar"><i></i></div>':'')};
 
-  try { for (const k of ['token','owner','repo','appName','appId']) localStorage.setItem('h2a_'+k, $(k).value); } catch(e){}
+$('go').onclick=async()=>{
+  const token=$('token').value.trim(),owner=$('owner').value.trim(),repo=$('repo').value.trim();
+  const appId=$('appId').value.trim();
+  if(!webFile){return say('<span class="err">בחר קובץ HTML או ZIP.</span>')}
+  if(!token||!owner||!repo){$('conn').open=true;return say('<span class="err">מלא את פרטי החיבור ל-GitHub.</span>')}
+  if(!/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/.test(appId))return say('<span class="err">שם החבילה לא תקין (למשל com.example.app).</span>');
+  const vCode=parseInt($('vCode').value,10);
+  if(!(vCode>=1))return say('<span class="err">מספר גרסה חייב להיות 1 ומעלה.</span>');
+  try{for(const k of ['token','owner','repo'])localStorage.setItem('h2a_'+k,$(k).value)}catch(e){}
 
-  $('go').disabled = true;
-  const runId = Date.now().toString();
-  try {
-    log('בודק ריפו...');
-    const rr = await api(token, `/repos/${owner}/${repo}`);
-    if (!rr.ok) throw new Error('הריפו לא נמצא או שאין הרשאה (' + rr.status + ')');
-    const branch = (await rr.json()).default_branch;
+  const isZip=/\.zip$/i.test(webFile.name);
+  const config={
+    appName:$('appName').value.trim()||'My App',appId,
+    versionName:$('vName').value.trim()||'1.0.0',versionCode:vCode,
+    minSdk:+$('minSdk').value,targetSdk:+$('targetSdk').value,
+    orientation:$('orient').value,fullscreen:$('fullscreen').checked,
+    permissions:[...document.querySelectorAll('[data-p]:checked')].map(e=>e.dataset.p),
+    mixedContent:$('mixed').checked,debug:$('debug').checked,
+    bgColor:$('bgColor').value.trim(),userAgent:$('ua').value.trim(),
+    hasIcon:!!iconFile,type:isZip?'zip':'html'
+  };
+  const id=Date.now().toString();
+  $('go').disabled=true;
+  const put=async(name,b64)=>{
+    const r=await api(token,`/repos/${owner}/${repo}/contents/uploads/${name}`,{method:'PUT',body:JSON.stringify({message:'upload '+name,content:b64,branch})});
+    if(!r.ok)throw new Error('העלאה נכשלה ('+name+'): '+(await r.text()));
+  };
+  let branch;
+  try{
+    say('בודק ריפו...',true);
+    const rr=await api(token,`/repos/${owner}/${repo}`);
+    if(!rr.ok)throw new Error('הריפו לא נמצא או שאין הרשאה ('+rr.status+')');
+    branch=(await rr.json()).default_branch;
 
-    log('מעלה את קובץ ה-HTML...');
-    const content = toB64(await file.arrayBuffer());
-    const up = await api(token, `/repos/${owner}/${repo}/contents/uploads/${runId}.html`, {
-      method: 'PUT',
-      body: JSON.stringify({ message: 'upload ' + runId, content, branch })
-    });
-    if (!up.ok) throw new Error('העלאה נכשלה: ' + (await up.text()));
+    say('מעלה קבצים...',true);
+    await put(id+(isZip?'.zip':'.html'),toB64(await webFile.arrayBuffer()));
+    if(iconFile)await put(id+'.png',await iconToPngB64(iconFile));
+    await put(id+'.json',utf8B64(JSON.stringify(config)));
 
-    const iconFile = $('icon').files[0];
-    if (iconFile) {
-      log('מעלה אייקון...');
-      const iconB64 = await iconToPngB64(iconFile);
-      const upI = await api(token, `/repos/${owner}/${repo}/contents/uploads/${runId}.png`, {
-        method: 'PUT',
-        body: JSON.stringify({ message: 'icon ' + runId, content: iconB64, branch })
-      });
-      if (!upI.ok) throw new Error('העלאת האייקון נכשלה: ' + (await upI.text()));
+    say('מפעיל בנייה...',true);
+    const dp=await api(token,`/repos/${owner}/${repo}/actions/workflows/build-apk.yml/dispatches`,{method:'POST',body:JSON.stringify({ref:branch,inputs:{run_id:id}})});
+    if(dp.status!==204)throw new Error('הפעלת ה-workflow נכשלה: '+(await dp.text()));
+
+    const t0=Date.now();
+    while(Date.now()-t0<20*60*1000){
+      await new Promise(r=>setTimeout(r,8000));
+      say(`בונה וחותם APK... (${Math.round((Date.now()-t0)/1000)} שניות)<br><a class="ltr" style="color:var(--pri);font-size:12px" target="_blank" href="https://github.com/${owner}/${repo}/actions">מעקב ב-GitHub Actions</a>`,true);
+      const rel=await api(token,`/repos/${owner}/${repo}/releases/tags/apk-${id}`);
+      if(rel.ok){const a=((await rel.json()).assets||[])[0];
+        if(a){say(`<span class="ok">ה-APK מוכן.</span><a class="dl" href="${a.browser_download_url}">⬇ הורד APK</a>`);return}}
     }
-
-    log('מפעיל בנייה...');
-    const dp = await api(token, `/repos/${owner}/${repo}/actions/workflows/build-apk.yml/dispatches`, {
-      method: 'POST',
-      body: JSON.stringify({ ref: branch, inputs: { run_id: runId, app_name: appName, app_id: appId, has_icon: iconFile ? 'true' : 'false' } })
-    });
-    if (dp.status !== 204) throw new Error('הפעלת ה-workflow נכשלה: ' + (await dp.text()));
-
-    const start = Date.now();
-    while (Date.now() - start < 15*60*1000) {
-      await new Promise(r => setTimeout(r, 10000));
-      const sec = Math.round((Date.now()-start)/1000);
-      log(`בונה וחותם APK... (${sec} שניות)`);
-      const rel = await api(token, `/repos/${owner}/${repo}/releases/tags/apk-${runId}`);
-      if (rel.ok) {
-        const j = await rel.json();
-        const asset = (j.assets||[])[0];
-        if (asset) {
-          $('log').innerHTML = `<span class="ok">ה-APK מוכן.</span><a class="dl" href="${asset.browser_download_url}">הורד APK</a>`;
-          return;
-        }
-      }
-    }
-    throw new Error('הבנייה לוקחת יותר מדי זמן. בדוק את לשונית Actions בריפו.');
-  } catch (e) {
-    log(e.message, 'err');
-  } finally {
-    $('go').disabled = false;
-  }
+    throw new Error('הבנייה ארוכה מהצפוי. בדוק את לשונית Actions בריפו.');
+  }catch(e){say('<span class="err">'+e.message+'</span>')}
+  finally{$('go').disabled=false}
 };
 </script>
 </body>
