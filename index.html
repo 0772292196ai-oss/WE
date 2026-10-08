@@ -44,6 +44,9 @@
   <label>קובץ HTML</label>
   <input id="file" type="file" accept=".html,.htm">
 
+  <label>תמונת אייקון (אופציונלי, PNG/JPG, עדיף ריבועית)</label>
+  <input id="icon" type="file" accept="image/*">
+
   <button id="go">בנה APK</button>
   <div id="log"></div>
 </div>
@@ -78,6 +81,15 @@ const toB64 = buf => {
   return btoa(s);
 };
 
+// ממיר כל תמונה ל-PNG ריבועי 512x512 (חיתוך למרכז) ומחזיר base64
+const iconToPngB64 = async file => {
+  const bmp = await createImageBitmap(file);
+  const s = Math.min(bmp.width, bmp.height);
+  const c = document.createElement('canvas'); c.width = c.height = 512;
+  c.getContext('2d').drawImage(bmp, (bmp.width-s)/2, (bmp.height-s)/2, s, s, 0, 0, 512, 512);
+  return c.toDataURL('image/png').split(',')[1];
+};
+
 $('go').onclick = async () => {
   const token = $('token').value.trim(), owner = $('owner').value.trim(), repo = $('repo').value.trim();
   const appName = $('appName').value.trim(), appId = $('appId').value.trim();
@@ -103,10 +115,21 @@ $('go').onclick = async () => {
     });
     if (!up.ok) throw new Error('העלאה נכשלה: ' + (await up.text()));
 
+    const iconFile = $('icon').files[0];
+    if (iconFile) {
+      log('מעלה אייקון...');
+      const iconB64 = await iconToPngB64(iconFile);
+      const upI = await api(token, `/repos/${owner}/${repo}/contents/uploads/${runId}.png`, {
+        method: 'PUT',
+        body: JSON.stringify({ message: 'icon ' + runId, content: iconB64, branch })
+      });
+      if (!upI.ok) throw new Error('העלאת האייקון נכשלה: ' + (await upI.text()));
+    }
+
     log('מפעיל בנייה...');
     const dp = await api(token, `/repos/${owner}/${repo}/actions/workflows/build-apk.yml/dispatches`, {
       method: 'POST',
-      body: JSON.stringify({ ref: branch, inputs: { run_id: runId, app_name: appName, app_id: appId } })
+      body: JSON.stringify({ ref: branch, inputs: { run_id: runId, app_name: appName, app_id: appId, has_icon: iconFile ? 'true' : 'false' } })
     });
     if (dp.status !== 204) throw new Error('הפעלת ה-workflow נכשלה: ' + (await dp.text()));
 

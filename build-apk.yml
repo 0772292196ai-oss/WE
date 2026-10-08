@@ -12,6 +12,10 @@ on:
       app_id:
         required: true
         default: "com.example.myapp"
+      has_icon:
+        description: "true if uploads/<run_id>.png exists"
+        required: false
+        default: "false"
 
 permissions:
   contents: write
@@ -23,6 +27,7 @@ jobs:
       RUN_ID: ${{ inputs.run_id }}
       APP_NAME: ${{ inputs.app_name }}
       APP_ID: ${{ inputs.app_id }}
+      HAS_ICON: ${{ inputs.has_icon }}
       KS_B64: ${{ secrets.KEYSTORE_BASE64 }}
       KS_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
       GH_TOKEN: ${{ github.token }}
@@ -51,6 +56,21 @@ jobs:
           npx cap init "$APP_NAME" "$APP_ID" --web-dir www
           npx cap add android
           npx cap sync android
+
+      - name: Apply custom icon
+        if: ${{ inputs.has_icon == 'true' }}
+        run: |
+          sudo apt-get install -y imagemagick > /dev/null
+          RES=build/android/app/src/main/res
+          # הסרת האייקון האדפטיבי כדי שיוצג ה-PNG שלנו
+          rm -rf "$RES/mipmap-anydpi-v26"
+          for d in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
+            DIR="$RES/mipmap-${d%%:*}"; SZ="${d##*:}"
+            mkdir -p "$DIR"
+            for n in ic_launcher ic_launcher_round ic_launcher_foreground; do
+              convert "uploads/${RUN_ID}.png" -resize ${SZ}x${SZ} "$DIR/$n.png"
+            done
+          done
 
       - name: Accept Android licenses
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
